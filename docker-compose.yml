@@ -1,0 +1,53 @@
+version: "3.9"
+
+services:
+
+  # ── PostgreSQL Database ────────────────────────────────────────
+  db:
+    image: postgres:15-alpine          # Official lightweight Postgres image
+    restart: always                    # Auto-restart if it crashes
+    environment:
+      POSTGRES_USER: netbalance_user
+      POSTGRES_PASSWORD: netbalance_pass
+      POSTGRES_DB: netbalance_db
+    ports:
+      - "5432:5432"                    # host:container port mapping
+    volumes:
+      - postgres_data:/var/lib/postgresql/data  # Persist data between restarts
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U netbalance_user -d netbalance_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── FastAPI Backend ────────────────────────────────────────────
+  backend:
+    build: ./backend                   # Build from backend/Dockerfile
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://netbalance_user:netbalance_pass@db:5432/netbalance_db
+      SECRET_KEY: supersecretkey_change_in_production
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 30
+    depends_on:
+      db:
+        condition: service_healthy     # Wait for DB to be ready before starting
+    volumes:
+      - ./backend:/app                 # Hot reload: code changes reflect instantly
+
+  # ── React Frontend ─────────────────────────────────────────────
+  frontend:
+    build: ./frontend
+    restart: always
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules              # Don't overwrite container's node_modules
+
+volumes:
+  postgres_data:                       # Named volume for DB persistence
