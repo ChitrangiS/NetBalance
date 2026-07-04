@@ -73,9 +73,7 @@ def authenticate_user(db: Session, email: str, password: str) -> User:
     """
     user = get_user_by_email(db, email)
 
-    # Use a dummy hash for timing consistency when user doesn't exist
-    dummy_hash = "$2b$12$KIXkJ8DummyHashToPreventTimingAttacks00000000000000000"
-
+    dummy_hash = "$2b$12$DUzZq6ahzDHzSyI8z7b1g.zcTDof//wmzXp8eH0et0kOXjyNgMnnS"
     password_to_check = user.hashed_password if user else dummy_hash
     password_valid = verify_password(password, password_to_check)
 

@@ -4,42 +4,40 @@ from app.models.base import Base, TimestampMixin
 
 
 class User(Base, TimestampMixin):
-    """
-    Represents a registered user in the system.
-    
-    Inherits from both Base (ORM machinery) and TimestampMixin
-    (created_at, updated_at columns).
-    """
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
+    full_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
-    email: Mapped[str] = mapped_column(
-        String(255),
-        unique=True,         # No two users can share an email
-        index=True,          # Fast lookups by email during login
-        nullable=False,
+    # ── Relationships ─────────────────────────────────────────────────────────
+
+    created_groups: Mapped[list["Group"]] = relationship(   # type: ignore[name-defined]
+        "Group",
+        foreign_keys="Group.created_by",
+        back_populates="creator",
     )
 
-    full_name: Mapped[str] = mapped_column(
-        String(100),
-        nullable=False,
+    group_memberships: Mapped[list["GroupMember"]] = relationship(  # type: ignore[name-defined]
+        "GroupMember",
+        back_populates="user",
+        cascade="all, delete-orphan",
     )
 
-    hashed_password: Mapped[str] = mapped_column(
-        String(255),
-        nullable=False,
+    # Expenses this user paid for (they fronted the money)
+    expenses_paid: Mapped[list["Expense"]] = relationship(  # type: ignore[name-defined]
+        "Expense",
+        foreign_keys="Expense.paid_by",
+        back_populates="paid_by_user",
     )
 
-    is_active: Mapped[bool] = mapped_column(
-        Boolean,
-        default=True,        # New users are active by default
-        nullable=False,
+    # This user's share rows across all expenses
+    expense_splits: Mapped[list["ExpenseSplit"]] = relationship(    # type: ignore[name-defined]
+        "ExpenseSplit",
+        back_populates="user",
     )
-
-    # Relationships defined in later steps:
-    # group_memberships = relationship("GroupMember", back_populates="user")
-    # expenses_paid = relationship("Expense", back_populates="paid_by_user")
 
     def __repr__(self) -> str:
         return f"<User id={self.id} email={self.email}>"
