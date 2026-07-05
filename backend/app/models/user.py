@@ -12,32 +12,18 @@ class User(Base, TimestampMixin):
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
-    # ── Relationships ─────────────────────────────────────────────────────────
-
-    created_groups: Mapped[list["Group"]] = relationship(   # type: ignore[name-defined]
-        "Group",
-        foreign_keys="Group.created_by",
-        back_populates="creator",
+    created_groups: Mapped[list["Group"]] = relationship(  # type: ignore[name-defined]
+        "Group", foreign_keys="Group.created_by", back_populates="creator"
     )
-
     group_memberships: Mapped[list["GroupMember"]] = relationship(  # type: ignore[name-defined]
-        "GroupMember",
-        back_populates="user",
-        cascade="all, delete-orphan",
+        "GroupMember", back_populates="user", cascade="all, delete-orphan"
     )
-
-    # Expenses this user paid for (they fronted the money)
     expenses_paid: Mapped[list["Expense"]] = relationship(  # type: ignore[name-defined]
-        "Expense",
-        foreign_keys="Expense.paid_by",
-        back_populates="paid_by_user",
+        "Expense", foreign_keys="Expense.paid_by", back_populates="paid_by_user"
     )
-
-    # This user's share rows across all expenses
-    expense_splits: Mapped[list["ExpenseSplit"]] = relationship(    # type: ignore[name-defined]
-        "ExpenseSplit",
-        back_populates="user",
+    expense_splits: Mapped[list["ExpenseSplit"]] = relationship(  # type: ignore[name-defined]
+        "ExpenseSplit", back_populates="user"
     )
-
-    def __repr__(self) -> str:
-        return f"<User id={self.id} email={self.email}>"
+    refresh_tokens: Mapped[list["RefreshToken"]] = relationship(  # type: ignore[name-defined]
+        "RefreshToken", back_populates="user", cascade="all, delete-orphan"
+    )
